@@ -1,17 +1,42 @@
+import hyperswarm from "hyperswarm";
+import crypto from "crypto";
 import http from "http";
-import httpProxy from "http-proxy";
+import net from "net";
 
-swarm.on("connection", (socket) => {
-  httpProxy
-    .createProxyServer({ target: "http://localhost:9000" })
-    .listen(socket);
+const swarm = hyperswarm();
+const topic = crypto
+  .createHash("sha256")
+  .update("my-hyperswarm-topic-lol")
+  .digest();
+
+swarm.join(topic, {
+  lookup: true,
+  announce: true,
 });
 
-http
-  .createServer(function (req, res) {
-    res.writeHead(200, { "Content-Type": "text/plain" });
-    const headers = JSON.stringify(req.headers, true, 2);
-    res.write(`request successfully proxied! ${headers}`);
-    res.end();
-  })
-  .listen(9000);
+swarm.on("connection", (socket, details) => {
+  if (!details.peer) return;
+  //console.log(socket.remoteAddress, socket.remotePort, details.peer);
+
+  console.log(`http://${socket.remoteAddress}:${socket.remotePort}`)
+  socket.on("data", (message) => {
+    console.log("---PROXY- got message", message.toString());
+
+    let serviceSocket = new net.Socket();
+
+    serviceSocket.connect(socket.remotePort, socket.remoteAddress, () => {
+      console.log("---PROXY- Sending message to server");
+      serviceSocket.write(message);
+    });
+
+    serviceSocket.on("data", (data) => {
+      console.log("---PROXY- Receiving message from server", data.toString());
+      socket.write(data);
+    });
+  });
+
+});
+
+swarm.on("disconnection", (socket, details) => {
+  console.log("disconnection");
+});
