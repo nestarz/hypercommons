@@ -1,0 +1,14 @@
+{
+  "name": "proxy-common",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "license": "MIT",
+  "dependencies": {
+    "crypto": "^1.0.1",
+    "http-proxy": "^1.18.1",
+    "hyperswarm": "^2.14.0",
+    "pump": "^3.0.0",
+    "servor": "^4.0.2"
+  }
+}
