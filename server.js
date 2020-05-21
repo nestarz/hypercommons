@@ -23,26 +23,9 @@ http
   .listen(9200);
 
 swarm.on("connection", (socket, details) => {
-  // socket.pipe(process.stdout);
-  // process.stdin.pipe(socket);
-  // const local = new net.Socket().connect(8080);
-  // socket.on("data", (data) => local.write(data));
-  // local.on("data", console.log);
-  // socket.pipe(local);
-
   socket.on("data", (message) => {
-    console.log("---PROXY- got message", message.toString());
-
-    let serviceSocket = new net.Socket();
-
-    serviceSocket.connect(9200, "127.0.0.1", () => {
-      console.log("---PROXY- Sending message to server");
-      serviceSocket.write(message);
-    });
-
-    serviceSocket.on("data", (data) => {
-      console.log("---PROXY- Receiving message from server", data.toString());
-      socket.write(data);
-    });
+    const service = new net.Socket();
+    service.connect(9200, "127.0.0.1", () => service.write(message));
+    service.on("data", (data) => socket.write(data));
   });
 });
